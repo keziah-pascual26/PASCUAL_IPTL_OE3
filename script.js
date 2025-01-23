@@ -9,7 +9,7 @@ const storiesContainer = document.getElementById('storiesContainer');
 
     function addStories() {
         const mediaInput = document.getElementById('mediaInput');
-        const storyTitleInput = document.getElementById('storyTitleInput');
+        const storyTitleInput = document.getElementById('storyTitle');
         const files = Array.from(mediaInput.files);
         const storyTitle = storyTitleInput.value.trim();
 
@@ -59,53 +59,60 @@ const storiesContainer = document.getElementById('storiesContainer');
     }
 
     function showStory(index) {
-        if (index < 0 || index >= storyQueue.length) {
-            storyViewer.classList.remove('active');
-            clearTimeout(progressTimeout);
-            return;
-        }
-
-        const story = storyQueue[index];
-        storyViewerContent.innerHTML = '';
-        storyViewerTitle.textContent = story.title;
-
-        //Create and add the close button
-        const closeButton = document.createElement('button');
-        closeButton.textContent = 'Close';
-        closeButton.classList.add('close-button');
-        closeButton.addEventListener('click', () => {
-            //Stop video if it exists
-            const video = storyViewerContent.querySelector('video');
-            if (video) {
-                video.pause(); //Pause the video
-                video.currentTime = 0; // Reset video to the beginning
-            }
-            // Remove the active class anf clear the timeout
-            storyViewer.classList.remove('active');
-            clearTimeout(progressTimeout);
-        });
-
-        //Append close button to the content
-        storyViewerContent.appendChild(closeButton);
-
-        if (story.type === 'image') {
-            const img = document.createElement('img');
-            img.src = story.src;
-            storyViewerContent.appendChild(img);
-            updateProgressBar(5000, () => showStory(index +1));
-        } else if (story.type === 'video') {
-            const video = document.createElement('video');
-            video.src = story.src;
-            video.autoplay = true;
-            storyViewerContent.appendChild(video);
-            video.onloadedmetadata = () => {
-                updateProgressBar(15000, () => showStory(index + 1));
-            };
-        }
-
-        storyViewer.classList.add('active');
-
+    if (index < 0 || index >= storyQueue.length) {
+        storyViewer.classList.remove('active');
+        clearTimeout(progressTimeout);
+        return;
     }
+
+    const story = storyQueue[index];
+    storyViewerContent.innerHTML = '';
+    storyViewerTitle.textContent = story.title;
+
+    // Create and add the close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Close';
+    closeButton.classList.add('close-button');
+    closeButton.addEventListener('click', () => {
+        // Stop video if it exists
+        const video = storyViewerContent.querySelector('video');
+        if (video) {
+            video.pause(); // Pause the video
+            video.currentTime = 0; // Reset video to the beginning
+        }
+        // Remove the active class and clear the timeout
+        storyViewer.classList.remove('active');
+        clearTimeout(progressTimeout);
+    });
+
+    // Append close button to the content
+    storyViewerContent.appendChild(closeButton);
+
+    if (story.type === 'image') {
+        const img = document.createElement('img');
+        img.src = story.src;
+        storyViewerContent.appendChild(img);
+        updateProgressBar(5000, () => showStory(index + 1));
+    } else if (story.type === 'video') {
+        const video = document.createElement('video');
+        video.src = story.src;
+        video.autoplay = true;
+        video.muted = false; // Ensure video has sound
+        storyViewerContent.appendChild(video);
+
+        video.onloadedmetadata = () => {
+            updateProgressBar(15000, () => {
+                // Stop video and its audio after 15 seconds
+                video.pause();
+                video.currentTime = 0; // Reset video to the beginning
+                showStory(index + 1);
+            });
+        };
+    }
+
+    storyViewer.classList.add('active');
+}
+
     
 function updateProgressBar(duration, callback) {
     //Ensure you have a progressBar element in your HTML
